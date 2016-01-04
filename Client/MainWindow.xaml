@@ -1,0 +1,39 @@
+﻿<Window
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity" xmlns:ei="http://schemas.microsoft.com/expression/2010/interactions" x:Class="Chat.MainWindow"
+        Title="Chat Client"  >
+    <Window.Resources>
+        <Storyboard x:Key="OnSizeChanged1"/>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="200"/>
+            <RowDefinition Height="Auto" MinHeight="18"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="200"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto" MinWidth="50"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel x:Name="StackPanelUserList" Grid.Row="0" Grid.Column="2" />
+        <Grid Grid.ColumnSpan="3" Grid.Column="0" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="ButtonConnect" Content="Connect to server" Height="22" VerticalAlignment="Top" Click="ButtonConnect_Click" />
+            <TextBox x:Name="TextBoxPostEdit"  TextWrapping="Wrap" AcceptsReturn="True" MaxLines="5" MinLines="1" Grid.Column="1" KeyDown="TextBoxPostEdit_KeyDown" Height="22" Margin="5,0,0,0"/>
+        </Grid>
+        <GridSplitter Grid.Row="0" Grid.Column="1" Width="5" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch"/>
+        <ScrollViewer Grid.Row="0" Grid.Column="0" x:Name="ScrollViewerMessages" >
+            <i:Interaction.Triggers>
+                <i:EventTrigger SourceName="StackPanelMessages" EventName="SizeChanged">
+                    <ei:CallMethodAction  MethodName="ScrollToEnd" TargetObject="{Binding ElementName=ScrollViewerMessages}"/>
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
+            <StackPanel x:Name="StackPanelMessages"  >
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
