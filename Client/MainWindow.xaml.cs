@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -107,10 +108,9 @@ namespace Chat
                 RequestNick(command[1]);
             }
             else if (command[0] == "server"
-                     && command.Length == 3
-                     && Connect(command[1], command[2]))
+                     && command.Length == 3)
             {
-                ButtonConnect.Width = 0;
+                ButtonConnect_Click(ButtonConnect, null);
             }
             else
             {
@@ -132,37 +132,29 @@ namespace Chat
 
         private void ButtonConnect_Click(object sender, RoutedEventArgs e)
         {
-            if (Connect("localhost", "50000"))
-            {
-                ((Button) sender).Width = 0;
-            }
-        }
-
-        private bool Connect(string address, string port)
-        {
             if (IsConnected)
             {
                 AddTextToUi("Already connected");
-                return false;
             }
-
-            try
+            var temp = new Thread(delegate()
             {
-                _tcpClient = new TCPClient(address, port);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Connection cannot be established!!!111\n" + e.Message);
-                return false;
-            }
+                try
+                {
+                    _tcpClient = new TCPClient("localhost", TcpWorks.DefaultPort.ToString());
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Connection cannot be established!!!111\n" + ex.Message);
+                    return;
+                }
 
-            if (_tcpClient == null || _tcpClient.Client == null) return false;
-            IsConnected = true;
-            AddTextToUi("Connected");
-
-            return true;
+                Application.Current.Dispatcher.BeginInvoke(new Action(() => ((Button) sender).Width = 0));
+                IsConnected = true;
+                Application.Current.Dispatcher.BeginInvoke(new Action(() => AddTextToUi("Connected")));
+                
+            });
+            temp.Start();
         }
-
 
         public void ChangeRoom(IEnumerable<string> commandCollec)
         {
