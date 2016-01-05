@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 
 namespace Chat
 {
@@ -13,7 +11,7 @@ namespace Chat
     {
         public const int DefaultPort = 50000;
 
-        public static object ByteArrayToObject(byte[] arrBytes)
+        private static object ByteArrayToObject(byte[] arrBytes)
         {
             var memStream = new MemoryStream();
             var binForm = new BinaryFormatter();
@@ -66,7 +64,7 @@ namespace Chat
             netStream.Write(dataBytes, 0, dataBytes.Length);
         }
 
-        public static void SafeAsyncReadFromClient(TcpClient client, byte[] bytesData, int messageSize, AsyncCallback callback)
+        private static void SafeAsyncReadFromClient(TcpClient client, byte[] bytesData, int messageSize, AsyncCallback callback)
         {
             if (client == null)
             {
@@ -118,11 +116,11 @@ namespace Chat
                     bytesData = new byte[messageSize];
                     isBody = false;
                 }
-                //netstream.BeginRead(bytesData, 0, messageSize, callback, null);
+                
                 SafeAsyncReadFromClient(client, bytesData, messageSize, callback);
             };
 
-            //netstream.BeginRead(bytesData, 0, messageSize, callback, null);
+            
             SafeAsyncReadFromClient(client, bytesData, messageSize, callback);
         }
     }

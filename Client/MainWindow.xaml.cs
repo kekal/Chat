@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -9,12 +10,9 @@ namespace Chat
 {
     public partial class MainWindow
     {
+        private const uint Maxmesseges = 999;
         public static MainWindow Wm;
-
-        public string Username { get; private set; }
-        public bool IsConnected { get; set; }
-        public const uint Maxmesseges = 999;
-        public TCPClient TcpClient;
+        private TCPClient _tcpClient;
 
 
         public MainWindow()
@@ -27,8 +25,10 @@ namespace Chat
 
             InitializeComponent();
             //Closed += (e, o) => TcpClient.Client.Close();
-
         }
+
+        private string Username { get; set; }
+        private bool IsConnected { get; set; }
 
         internal void AddTextToUi(string text)
         {
@@ -69,7 +69,9 @@ namespace Chat
 
         private void TextBoxPostEdit_KeyDown(object sender, KeyEventArgs e)
         {
-            if (!((Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) && Keyboard.IsKeyDown(Key.Enter))) return;
+            if (
+                !((Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)) &&
+                  Keyboard.IsKeyDown(Key.Enter))) return;
 
             var text = TextBoxPostEdit.Text;
 
@@ -78,7 +80,7 @@ namespace Chat
                 var mess = new Message(Username, DateTime.Now, Message.PackType.Post, text);
                 Send(mess);
             }
-            
+
             TextBoxPostEdit.Text = "";
         }
 
@@ -86,7 +88,7 @@ namespace Chat
         {
             if (IsConnected && mess != null)
             {
-                TcpClient.Send(mess);
+                _tcpClient.Send(mess);
             }
         }
 
@@ -118,7 +120,7 @@ namespace Chat
             return true;
         }
 
-        internal void RequestNick(string nick)
+        private void RequestNick(string nick)
         {
             Send(new Message(Username, DateTime.Now, Message.PackType.Nick, nick));
         }
@@ -132,7 +134,7 @@ namespace Chat
         {
             if (Connect("localhost", "50000"))
             {
-                ((Button)sender).Width = 0;
+                ((Button) sender).Width = 0;
             }
         }
 
@@ -146,7 +148,7 @@ namespace Chat
 
             try
             {
-                TcpClient = new TCPClient(address, port);
+                _tcpClient = new TCPClient(address, port);
             }
             catch (Exception e)
             {
@@ -154,7 +156,7 @@ namespace Chat
                 return false;
             }
 
-            if (TcpClient == null || TcpClient.Client == null) return false;
+            if (_tcpClient == null || _tcpClient.Client == null) return false;
             IsConnected = true;
             AddTextToUi("Connected");
 
@@ -162,5 +164,23 @@ namespace Chat
         }
 
 
+        public void ChangeRoom(IEnumerable<string> commandCollec)
+        {
+            Wm.StackPanelUserList.Children.Clear();
+            foreach (var nick in commandCollec)
+            {
+                var tb = new TextBlock
+                {
+                    Background = new SolidColorBrush(Colors.Bisque)
+                };
+
+                tb.Inlines.Add(new Run(nick)
+                {
+                    FontWeight = FontWeights.ExtraBold
+                });
+
+                Wm.StackPanelUserList.Children.Add(tb);
+            }
+        }
     }
 }

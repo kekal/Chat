@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Chat
 {
-    public class Server
+    public static class Server
     {
         private static TcpServer _server;
 
@@ -28,8 +28,7 @@ namespace Chat
         internal TcpServer(string port)
         {
             int servPort;
-            //_clients = new LinkedList<TcpClient>();
-            new LinkedList<string>();
+            
             _messages = new ConcurrentQueue<Message>();
             _humans = new LinkedList<Human>();
 
@@ -92,6 +91,7 @@ namespace Chat
 
             TcpWorks.SendObjectOnce(new Message(nick, DateTime.Now, Message.PackType.Nick, nick), client);
             Console.WriteLine("New client name \"" + nick + "\" sended");
+            UpdateRoomBroadcast();
 
             TcpWorks.ReciveMessagesLoop(client, DealWithRecieved);
             Console.WriteLine("Now waiting for " + nick + " messages.");
@@ -99,7 +99,7 @@ namespace Chat
             WaitForClient();
         }
 
-        public void ReplyToHandshake(TcpClient client)
+        private void ReplyToHandshake(TcpClient client)
         {
             string handshake;
 
@@ -142,44 +142,70 @@ namespace Chat
 
             if (mess.PacketType == Message.PackType.Post)
             {
-                if (mess.User != human.Nick) ForceChangeNick(human.Nick, human, client);
+                if (mess.User != human.Nick) ForceChangeNick(human.Nick, human);
 
-                _messages.Enqueue(mess);
+                
                 Console.WriteLine(mess.Time.ToLongTimeString() + ' ' + mess.User + ' ' + mess.Body);
-                NewMessegeEvent.Set();
+                AddMessageToQueue(mess);
             }
         }
 
-        public void TryChangeNick(string nick, Human human, TcpClient client)
+        private void AddMessageToQueue(Message mess)
+        {
+            _messages.Enqueue(mess);
+            NewMessegeEvent.Set();
+        }
+
+        private void TryChangeNick(string nick, Human human, TcpClient client)
         {
             if (_humans.Any(hum => hum.Nick == nick))
             {
+//                AddMessageToQueue(new Message("System",
+//                    DateTime.Now,
+//                    Message.PackType.Post,
+//                    "Nick is already occupied"));
+                #region 
                 TcpWorks.SendObjectOnce(new Message("System",
                     DateTime.Now,
                     Message.PackType.Post,
                     "Nick is already occupied"),
                     client);
+                #endregion
             }
             else
             {
                 human.Nick = nick;
+//                AddMessageToQueue(new Message("System",
+//                    DateTime.Now,
+//                    Message.PackType.Nick,
+//                    nick));
+                #region 
                 TcpWorks.SendObjectOnce(new Message("System",
                     DateTime.Now,
                     Message.PackType.Nick,
                     nick),
                     client);
+                #endregion
+                UpdateRoomBroadcast();
             }
         }
 
-        public void ForceChangeNick(string nick, Human human, TcpClient client)
+        private void UpdateRoomBroadcast()
+        {
+            var nicks = string.Join("%", _humans.Select(human1 => human1.Nick));
+            AddMessageToQueue(new Message("System", DateTime.Now, Message.PackType.Command, "ROOM%" + nicks));
+            //_messages.Enqueue(new Message("System", DateTime.Now, Message.PackType.Command, "ROOM%" + nicks));
+            //NewMessegeEvent.Set();
+        }
+
+        private void ForceChangeNick(string nick, Human human)
         {
             human.Nick = nick;
-            TcpWorks.SendObjectOnce(new Message("System",
+            AddMessageToQueue(new Message("System",
                 DateTime.Now,
                 Message.PackType.Nick,
-                nick),
-                client);
-
+                nick));
+            UpdateRoomBroadcast();
         }
 
         private string GenerateNick()

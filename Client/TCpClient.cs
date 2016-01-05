@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net.Sockets;
 using System.Windows;
 
@@ -6,8 +7,6 @@ namespace Chat
 {
     public class TCPClient
     {
-        public TcpClient Client { get; private set; }
-
         public TCPClient(string server, string port)
         {
             int servPort;
@@ -19,7 +18,7 @@ namespace Chat
             }
             catch (Exception e)
             {
-                MessageBox.Show("С сетью что-то не так.\n"+e.Message);
+                MessageBox.Show("С сетью что-то не так.\n" + e.Message);
                 if (Client != null) Client.Close();
                 return;
             }
@@ -29,7 +28,9 @@ namespace Chat
             TcpWorks.ReciveMessagesLoop(Client, PerformRecivedMessage);
         }
 
-        private bool  PerformHandshake()
+        public TcpClient Client { get; private set; }
+
+        private bool PerformHandshake()
         {
             TcpWorks.SendObjectOnce("handshake", Client);
 
@@ -43,7 +44,7 @@ namespace Chat
 
         private static void PerformRecivedMessage(object obj, TcpClient client)
         {
-            var mess = (Message)obj;
+            var mess = (Message) obj;
 
             var dispatch = Application.Current.Dispatcher;
 
@@ -54,11 +55,17 @@ namespace Chat
                     dispatch.BeginInvoke(new Action(() => MainWindow.Wm.AddTextToUi("You are now known as " + mess.Body)));
                     break;
                 case Message.PackType.Post:
-                    dispatch.BeginInvoke(new Action(() => MainWindow.Wm.AddPostToUi((Message)mess)));
+                    dispatch.BeginInvoke(new Action(() => MainWindow.Wm.AddPostToUi(mess)));
                     break;
                 case Message.PackType.Ping:
                     break;
                 case Message.PackType.Command:
+                    var commandCollec = mess.Body.Split('%').ToList();
+                    if (commandCollec[0] == "ROOM")
+                    {
+                        commandCollec.RemoveAt(0);
+                        dispatch.BeginInvoke(new Action(() => MainWindow.Wm.ChangeRoom(commandCollec)));
+                    }
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
