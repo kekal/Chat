@@ -12,16 +12,7 @@ namespace Chat
             int servPort;
             if (!int.TryParse(port, out servPort)) servPort = TcpWorks.DefaultPort;
 
-            try
-            {
-                Client = new TcpClient(server, servPort);
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("С сетью что-то не так.\n" + e.Message);
-                if (Client != null) Client.Close();
-                return;
-            }
+            Client = new TcpClient(server, servPort);
 
             if (!PerformHandshake()) return;
 
@@ -74,7 +65,14 @@ namespace Chat
 
         public void Send(Message message)
         {
-            TcpWorks.SendObjectOnce(message, Client);
+            try
+            {
+                TcpWorks.SendObjectOnce(message, Client);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+            }
         }
     }
 }

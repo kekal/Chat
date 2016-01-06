@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.NetworkInformation;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,6 +15,7 @@ namespace Chat
         private const uint Maxmesseges = 999;
         public static MainWindow Wm;
         private TCPClient _tcpClient;
+        private bool _oddLine;
 
 
         public MainWindow()
@@ -39,11 +41,10 @@ namespace Chat
 
         internal void AddPostToUi(Message mess)
         {
-            var tb = new TextBlock
-            {
-                //Margin = new Thickness(0, -1, 0, -1),
-                Background = new SolidColorBrush(Colors.LightGreen)
-            };
+            _oddLine = !_oddLine;
+
+            var tb = new TextBlock();
+            if (_oddLine) tb.Background = new SolidColorBrush(Colors.Aquamarine);
 
             tb.Inlines.Add(new Run("[" + mess.Time.ToLongTimeString() + "]")
             {
@@ -96,6 +97,7 @@ namespace Chat
         private bool ParseCommand(string text)
         {
             text = text.ToLower().Trim();
+
             if (text.IndexOf('/') != 0)
             {
                 return false;
@@ -107,8 +109,7 @@ namespace Chat
             {
                 RequestNick(command[1]);
             }
-            else if (command[0] == "server"
-                     && command.Length == 3)
+            else if (command[0] == "server" && command.Length == 3)
             {
                 ButtonConnect_Click(ButtonConnect, null);
             }
@@ -151,7 +152,6 @@ namespace Chat
                 Application.Current.Dispatcher.BeginInvoke(new Action(() => ((Button) sender).Width = 0));
                 IsConnected = true;
                 Application.Current.Dispatcher.BeginInvoke(new Action(() => AddTextToUi("Connected")));
-                
             });
             temp.Start();
         }
